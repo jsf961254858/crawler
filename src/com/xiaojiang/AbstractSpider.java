@@ -115,6 +115,8 @@ public class AbstractSpider extends TimerTask implements Spider {
 	private Long taskRecordId = null;
 	
 	
+	
+	
 	/**
 	 * 抓取url
 	 */
