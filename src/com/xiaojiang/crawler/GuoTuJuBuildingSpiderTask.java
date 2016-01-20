@@ -65,7 +65,7 @@ public class GuoTuJuBuildingSpiderTask extends AbstractSpider {
 					continue;
 				}
 				System.out.println(url2);
-				this.saveUrl(url2, 0L);
+				//this.saveUrl(url2, 0L);
 			}
 		}
 
@@ -147,7 +147,7 @@ public class GuoTuJuBuildingSpiderTask extends AbstractSpider {
 		task.setRunParam(param);
 		
 		//System.out.println(task.totalPageCount());
-		//task.crawlUrl(1);
-		System.out.println(task.crawlDetailInfo("http://ris.szpl.gov.cn/bol/projectdetail.aspx?id=24311"));
+		task.crawlUrl(1);
+		//System.out.println(task.crawlDetailInfo("http://ris.szpl.gov.cn/bol/projectdetail.aspx?id=24311"));
 	}
 }
