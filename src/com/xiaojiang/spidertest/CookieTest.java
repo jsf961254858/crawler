@@ -31,6 +31,7 @@ public class CookieTest {
 		String newUrl = "http://www.dajie.com/home";
 		HttpGet httpGet = new HttpGet(newUrl);
 		
+		//在页面控制台执行document.cookie
 		String cookie = "DJ_RF=empty; DJ_EU=http%3A%2F%2Fwww.dajie.com%2Fhome; DJ_UVID=MTQ2MTkwNzk3NDU4MTg1NjQ2; dj_cap=0564c054acc1ce12402998471ae0af54; regSucceedType=email; dj_auth_v3=MrZrP3TGNRNXCNiOpQY7Ggscf4kjfEEsJzFPDzu3iwi5XtG9tS3Sw-WgChC2DVKL; uchome_loginuser=35375099; USER_ACTION=\"request^AProfessional^AREG^Aregm:crt0^A-\"; send_verify_mail=961254858%40qq.com; login_email=961254858%40qq.com; inbound_tag=true";
 		httpGet.addHeader(new BasicHeader("Cookie", cookie));
 		
