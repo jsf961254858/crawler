@@ -73,42 +73,6 @@ public class HttpConnectionManager {
 		
 		DefaultHttpClient client = new DefaultHttpClient(connectionManager, httpParams);
 		
-		/*
-		// 自定义重连机制
-		HttpRequestRetryHandler httpRequestRetryHandler = new HttpRequestRetryHandler() {
-			
-			@Override
-			public boolean retryRequest(IOException exception, int executionCount,
-					HttpContext context) {
-				System.out.println("***");
-				if(executionCount > 3){
-					// 如果超过最大重试次数，那么就不要继续了
-					return false;
-				}
-				
-				if(exception instanceof NoHttpResponseException){
-					// 如果服务器丢掉了连接，那么就重试
-					return true;
-				}
-				
-				if(exception instanceof SSLHandshakeException){
-					// 不要重试SSL握手异常
-					return false;
-				}
-				
-				HttpRequest request = (HttpRequest) context.getAttribute(ExecutionContext.HTTP_REQUEST);
-				boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
-				if (idempotent) {
-                    // 如果请求被认为是幂等的，那么就重试
-                    return true;
-                }
-				
-				return false;
-			}
-		};
-		
-		client.setHttpRequestRetryHandler(httpRequestRetryHandler);
-		*/
 		if(proxyIp !=null && proxyPort !=null){
 			HttpHost proxy = new HttpHost(proxyIp, proxyPort);
 			client.getParams().setParameter(ConnRouteParams.DEFAULT_PROXY, proxy);

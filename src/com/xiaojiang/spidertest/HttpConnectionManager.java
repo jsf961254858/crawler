@@ -109,6 +109,9 @@ public class HttpConnectionManager {
         collection.add(new BasicHeader("Accept-Language", "zh-cn,zh,en-US,en;q=0.5"));
         collection.add(new BasicHeader("Accept-Charset", "ISO-8859-1,utf-8,gbk,gb2312;q=0.7,*;q=0.7"));
         collection.add(new BasicHeader("Accept-Encoding", "gzip, deflate"));
+       
+        //添加cookie
+        
         parentParams.setParameter(ClientPNames.DEFAULT_HEADERS, collection);
 	
         //请求重试处理
@@ -341,16 +344,6 @@ public class HttpConnectionManager {
 	
 	public static void main(String[] args) {
 		
-		
-		HttpConnectionManager httpConnectionManager = new HttpConnectionManager();
-		
-		Date start = new Date();
-		
-		httpConnectionManager.getHtml("http://www.baidu.com/");
-		
-		Date end = new Date();
-		
-		System.out.println((end.getTime() - start.getTime())/1000.0 + " 秒");
 		
 		
 		
