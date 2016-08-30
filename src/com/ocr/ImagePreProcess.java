@@ -203,7 +203,7 @@ public class ImagePreProcess {
 	}
 
 	/**
-	 * 主函数入口
+	 * 字体固定，大小固定，位置固定的验证码
 	 * @param args
 	 * @throws Exception
 	 */
