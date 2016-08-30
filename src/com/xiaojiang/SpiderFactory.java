@@ -19,7 +19,6 @@ import com.xiaojiang.bean.DataTask;
 import com.xiaojiang.bean.DataTaskQuery;
 import com.xiaojiang.crawler.AnjukeCommunityInfoSpider;
 import com.xiaojiang.crawler.AnjukeSaleSpiderTask;
-import com.xiaojiang.crawler.CharacteristicSpider;
 import com.xiaojiang.crawler.DaikanSaleTest;
 import com.xiaojiang.crawler.FangRentSpiderTask;
 import com.xiaojiang.crawler.FangChuzuAgentInfo;
@@ -138,8 +137,6 @@ public class SpiderFactory {
     		spider = new Five8ChuzuAgentInfo();
     	}else if(id == 8989521){
     		spider = new GuoTuJuBuildingSpiderTask();
-    	}else if(id == 20151222){
-    		spider = new CharacteristicSpider();
     	}else if(id == 20151228){
     		spider = new AnjukeCommunityInfoSpider();
     	}
@@ -188,7 +185,7 @@ public class SpiderFactory {
 		
 		SpiderFactory test = new SpiderFactory();
 		
-		test.run(20151228);
+		test.run(37);
 	}
 
 	
