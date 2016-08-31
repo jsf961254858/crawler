@@ -18,10 +18,10 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 
-public class ImagePreProcess2 {
+public class ImagePreProcess3 {
 
-	//训练集样本<key,value>=<图片,对应的数字>
 	private static Map<BufferedImage, String> trainMap = null;
+	private static int index = 0;
 
 	public static int isBlack(int colorInt) {
 		Color color = new Color(colorInt);
@@ -33,14 +33,15 @@ public class ImagePreProcess2 {
 
 	public static int isWhite(int colorInt) {
 		Color color = new Color(colorInt);
-		if (color.getRed() + color.getGreen() + color.getBlue() > 100) {
+		if (color.getRed() + color.getGreen() + color.getBlue() > 600) {
 			return 1;
 		}
 		return 0;
 	}
 
 	/**
-	 * 去除背景颜色    这个验证码是黑白不用处理
+	 * 可以注意到每个验证码数字或字母都是同一颜色，所以把验证码平均分成5份
+	 * 计算每个区域的颜色分布，除了白色之外，颜色值最多的就是验证码的颜色
 	 * @param picFile 验证码图片所在文件地址
 	 * @return img  去除背景颜色的验证码
 	 * @throws Exception
@@ -48,6 +49,52 @@ public class ImagePreProcess2 {
 	public static BufferedImage removeBackgroud(String picFile)
 			throws Exception {
 		BufferedImage img = ImageIO.read(new File(picFile));
+		
+		img = img.getSubimage(1, 1, img.getWidth() - 2, img.getHeight() - 2); //去除图片的黑色边框
+		
+		int width = img.getWidth();
+		int height = img.getHeight();
+		double subWidth = width / 5.0;  //把验证码平均分成5份
+		for (int i = 0; i < 5; i++) {
+			
+			//map中记录除白色以外的每种颜色的像素个数
+			Map<Integer, Integer> map = new HashMap<Integer, Integer>(); 
+			for (int x = (int) (1 + i * subWidth); x < (i + 1) * subWidth && x < width - 1; ++x) {
+				for (int y = 0; y < height; ++y) {
+					if (isWhite(img.getRGB(x, y)) == 1)
+						continue;
+					if (map.containsKey(img.getRGB(x, y))) {
+						map.put(img.getRGB(x, y), map.get(img.getRGB(x, y)) + 1);
+					} else {
+						map.put(img.getRGB(x, y), 1);
+					}
+				}
+			}
+			
+			//计算map中颜色最多的像素值
+			int max = 0;
+			int colorMax = 0;
+			for (Integer color : map.keySet()) {
+				if (max < map.get(color)) {
+					max = map.get(color);
+					colorMax = color;
+				}
+			}
+			
+			/*
+			 * 将为colorMax的像素设为黑色
+			 * 其他设为白色
+			 */
+			for (int x = (int) (1 + i * subWidth); x < (i + 1) * subWidth && x < width - 1; ++x) {
+				for (int y = 0; y < height; ++y) {
+					if (img.getRGB(x, y) != colorMax) {
+						img.setRGB(x, y, Color.WHITE.getRGB());
+					} else {
+						img.setRGB(x, y, Color.BLACK.getRGB());
+					}
+				}
+			}
+		}
 		return img;
 	}
 
@@ -65,7 +112,7 @@ public class ImagePreProcess2 {
 		
 		Label1: for (int y = 0; y < height; ++y) {
 			for (int x = 0; x < width; ++x) {
-				if (isWhite(img.getRGB(x, y)) == 1) {
+				if (isBlack(img.getRGB(x, y)) == 1) {
 					start = y;
 					break Label1;
 				}
@@ -74,7 +121,7 @@ public class ImagePreProcess2 {
 		
 		Label2: for (int y = height - 1; y >= 0; --y) {
 			for (int x = 0; x < width; ++x) {
-				if (isWhite(img.getRGB(x, y)) == 1) {
+				if (isBlack(img.getRGB(x, y)) == 1) {
 					end = y;
 					break Label2;
 				}
@@ -97,36 +144,28 @@ public class ImagePreProcess2 {
 		List<BufferedImage> subImgs = new ArrayList<BufferedImage>(); //保存截取段
 		int width = img.getWidth();
 		int height = img.getHeight();
+		List<Integer> weightlist = new ArrayList<Integer>(); //在x坐标中 将图片分成4段或者5段
 		
-		List<Integer> weightlist = new ArrayList<Integer>();  //在x坐标中 将图片分成4段
-		
-		//查找x坐标上白色像素个数
+		//查找x坐标上黑色像素个数
 		for (int x = 0; x < width; ++x) {
 			int count = 0;
 			for (int y = 0; y < height; ++y) {
-				if (isWhite(img.getRGB(x, y)) == 1) {
+				if (isBlack(img.getRGB(x, y)) == 1) {
 					count++;
 				}
 			}
 			weightlist.add(count);
 		}
 		
-		//
-		for (int i = 0; i < weightlist.size();) {
-			
-			int length = 0; //图片x坐标上的像素数
-			while (weightlist.get(i++) > 1) {
+		for (int i = 0; i < weightlist.size();i++) {
+			int length = 0;
+			while (i < weightlist.size() && weightlist.get(i) > 0) {
+				i++;
 				length++;
 			}
-			if (length > 12) {  //length>12的情况 应该是两个数字连在一起了 的情况
-				
-				subImgs.add(removeBlank(img.getSubimage(i - length - 1, 0, length / 2, height)));
-				subImgs.add(removeBlank(img.getSubimage(i - length / 2 - 1, 0, length / 2, height)));
-				
-			} else if (length > 3) {
-				
-				BufferedImage subimage = img.getSubimage(i - length - 1, 0, length, height); //纵向截取
-				subImgs.add(removeBlank(subimage));
+			if (length > 2) {
+				//纵向截取
+				subImgs.add(removeBlank(img.getSubimage(i - length, 0, length, height)));
 			}
 		}
 		return subImgs;
@@ -140,7 +179,7 @@ public class ImagePreProcess2 {
 	public static Map<BufferedImage, String> loadTrainData() throws Exception {
 		if (trainMap == null) {
 			Map<BufferedImage, String> map = new HashMap<BufferedImage, String>();
-			File dir = new File("train2");
+			File dir = new File("train3");
 			File[] files = dir.listFiles();
 			for (File file : files) {
 				map.put(ImageIO.read(file), file.getName().charAt(0) + "");
@@ -159,17 +198,21 @@ public class ImagePreProcess2 {
 	 */
 	public static String getSingleCharOcr(BufferedImage img,
 			Map<BufferedImage, String> map) {
-		String result = "";
+		String result = "#";
 		int width = img.getWidth();
 		int height = img.getHeight();
 		int min = width * height;
 		for (BufferedImage bi : map.keySet()) {
 			int count = 0;
+			
+			if (Math.abs(bi.getWidth()-width) > 2 || (Math.abs(bi.getHeight()-height) > 2)) //如果两张图片大小相差大于2个像素 为噪音数据 不识别
+				continue;
+			
 			int widthmin = width < bi.getWidth() ? width : bi.getWidth();
 			int heightmin = height < bi.getHeight() ? height : bi.getHeight();
 			Label1: for (int x = 0; x < widthmin; ++x) {
 				for (int y = 0; y < heightmin; ++y) {
-					if (isWhite(img.getRGB(x, y)) != isWhite(bi.getRGB(x, y))) {
+					if (isBlack(img.getRGB(x, y)) != isBlack(bi.getRGB(x, y))) {
 						count++;
 						if (count >= min)
 							break Label1;
@@ -196,7 +239,7 @@ public class ImagePreProcess2 {
 		BufferedImage img = removeBackgroud(file); //去除背景颜色
 		
 		//2、切割图片
-		List<BufferedImage> listImg = splitImage(img); //按像素切割
+		List<BufferedImage> listImg = splitImage(img);//按像素切割
 		
 		//3、训练
 		/*
@@ -207,24 +250,21 @@ public class ImagePreProcess2 {
 		Map<BufferedImage, String> map = loadTrainData();//加载训练样本数据
 		String result = "";
 		for (BufferedImage bi : listImg) {
-			result += getSingleCharOcr(bi, map);
+			result += getSingleCharOcr(bi, map);          //图片已经变成了4个数字，所以最后一个不识别
 		}
 		
-		ImageIO.write(img, "JPG", new File("result2\\" + result + ".jpg")); //输出结果数据
+		ImageIO.write(img, "JPG", new File("result3\\" + result + ".jpg"));
 		return result;
 	}
 
 	/**
 	 * 下载验证码图片
-	 * 地址已经不存在，不过图片已经存储在img2中
-	 * http://www.pkland.net/img.php?key=2000
+	 * 地址http://game.tom.com/checkcode.php
 	 */
 	public static void downloadImage() {
 		HttpClient httpClient = new HttpClient();
-		GetMethod getMethod = null;
+		GetMethod getMethod = new GetMethod("http://game.tom.com/checkcode.php");
 		for (int i = 0; i < 30; i++) {
-			getMethod = new GetMethod("http://www.pkland.net/img.php?key="
-					+ (2000 + i));
 			try {
 				// 执行getMethod
 				int statusCode = httpClient.executeMethod(getMethod);
@@ -233,7 +273,7 @@ public class ImagePreProcess2 {
 							+ getMethod.getStatusLine());
 				}
 				// 读取内容
-				String picName = "img2\\" + i + ".jpg";
+				String picName = "img3\\" + i + ".jpg";
 				InputStream inputStream = getMethod.getResponseBodyAsStream();
 				OutputStream outStream = new FileOutputStream(picName);
 				IOUtils.copy(inputStream, outStream);
@@ -252,16 +292,15 @@ public class ImagePreProcess2 {
 	 * 生成训练集数据
 	 * @throws Exception
 	 */
-	private static int index = 0;
 	public static void trainData() throws Exception {
-		File dir = new File("temp2");
+		File dir = new File("temp3");
 		File[] files = dir.listFiles();
 		for (File file : files) {
-			BufferedImage img = removeBackgroud("temp2\\" + file.getName());
+			BufferedImage img = removeBackgroud("temp3\\" + file.getName());
 			List<BufferedImage> listImg = splitImage(img);
-			if (listImg.size() == 4) {
+			if (listImg.size() == 5) {
 				for (int j = 0; j < listImg.size(); ++j) {
-					ImageIO.write(listImg.get(j), "JPG", new File("train2\\"
+					ImageIO.write(listImg.get(j), "JPG", new File("train3\\"
 							+ file.getName().charAt(j) + "-" + (index++)
 							+ ".jpg"));
 				}
@@ -270,19 +309,18 @@ public class ImagePreProcess2 {
 	}
 
 	/**
-	 * 字体固定，大小固定，位置不固定的验证码
+	 * 前面的验证码背景都比较简单，用亮度稍微区分一下就可以去掉背景 
+	 * 下面这个稍微复杂一点的
 	 * @param args
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
 		
-		
-		//downloadImage(); //下载验证码
-		
-		//trainData(); //生成训练集
+		//downloadImage();
+		//trainData();
 		
 		for (int i = 0; i < 30; ++i) {
-			String text = getAllOcr("img2\\" + i + ".jpg");
+			String text = getAllOcr("img3\\" + i + ".jpg");
 			System.out.println(i + ".jpg = " + text);
 		}
 	}
